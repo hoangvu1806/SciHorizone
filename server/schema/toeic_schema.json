@@ -1,0 +1,170 @@
+{
+    "type": "object",
+    "properties": {
+        "estimated_score": {
+            "type": "integer",
+            "description": "Estimated TOEIC Reading score (scale 5-495)"
+        },
+        "reading_passages": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "passage_number": {
+                        "type": "integer",
+                        "description": "Passage sequence number"
+                    },
+                    "part": {
+                        "type": "string",
+                        "enum": ["Part 5", "Part 6", "Part 7"],
+                        "description": "Section of the TOEIC exam"
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "Title of the passage (if any)"
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "Passage content, synthesized or extracted from the original article"
+                    }
+                }
+            },
+            "description": "Reading passages, synthesized from the original article"
+        },
+        "part5_analysis": {
+            "type": "object",
+            "properties": {
+                "grammar_focus": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Key grammar points"
+                },
+                "vocabulary_level": {
+                    "type": "string",
+                    "enum": ["Basic", "Intermediate", "Advanced"],
+                    "description": "Vocabulary level"
+                },
+                "estimated_correct": {
+                    "type": "integer",
+                    "description": "Estimated number of correct answers (out of 30 questions)"
+                },
+                "challenging_areas": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Challenging areas"
+                }
+            }
+        },
+        "part6_analysis": {
+            "type": "object",
+            "properties": {
+                "passage_types": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Types of passages that appear"
+                },
+                "grammar_focus": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Key grammar points"
+                },
+                "estimated_correct": {
+                    "type": "integer",
+                    "description": "Estimated number of correct answers (out of 16 questions)"
+                },
+                "challenging_questions": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Challenging questions"
+                }
+            }
+        },
+        "part7_analysis": {
+            "type": "object",
+            "properties": {
+                "passage_types": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Types of passages that appear, each passage has its own distinct topic"
+                },
+                "question_types": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Exactly 3 question types for each passage, type 1 has 5 questions, type 2 has 4 questions, type 3 has 5 questions",
+                    "minItems": 3,
+                    "maxItems": 3
+                },
+                "estimated_correct": {
+                    "type": "integer",
+                    "description": "Estimated number of correct answers (out of 54 questions)"
+                },
+                "challenging_passages": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Challenging passages"
+                }
+            }
+        },
+        "questions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "question_number": {
+                        "type": "integer",
+                        "description": "Question sequence number"
+                    },
+                    "part": {
+                        "type": "string",
+                        "enum": ["Part 5", "Part 6", "Part 7"],
+                        "description": "Exam section"
+                    },
+                    "passage_reference": {
+                        "type": "integer",
+                        "description": "Link to the corresponding passage_number (for Part 6 and 7)"
+                    },
+                    "question_category": {
+                        "type": "integer",
+                        "enum": [1, 2, 3],
+                        "description": "Question type (1, 2 or 3) - each passage has 3 types, type 1 has 5 questions, type 2 has 4 questions, type 3 has 5 questions"
+                    },
+                    "question_text": {
+                        "type": "string",
+                        "description": "Question content"
+                    },
+                    "options": {
+                        "type": "object",
+                        "properties": {
+                            "A": { "type": "string" },
+                            "B": { "type": "string" },
+                            "C": { "type": "string" },
+                            "D": { "type": "string" }
+                        }
+                    },
+                    "correct_answer": {
+                        "type": "string",
+                        "description": "Correct answer (A, B, C or D)"
+                    },
+                    "explanation": {
+                        "type": "string",
+                        "description": "Answer explanation"
+                    }
+                }
+            }
+        },
+        "improvement_suggestions": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Đề xuất cải thiện"
+        }
+    },
+    "required": [
+        "estimated_score",
+        "reading_passages",
+        "part5_analysis",
+        "part6_analysis",
+        "part7_analysis",
+        "questions",
+        "improvement_suggestions"
+    ]
+}
