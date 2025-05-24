@@ -1,0 +1,221 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary-50: 240 249 255;
+    --color-primary-100: 224 242 254;
+    --color-primary-200: 186 230 253;
+    --color-primary-300: 125 211 252;
+    --color-primary-400: 56 189 248;
+    --color-primary-500: 14 165 233;
+    --color-primary-600: 2 132 199;
+    --color-primary-700: 3 105 161;
+    --color-primary-800: 7 89 133;
+    --color-primary-900: 12 74 110;
+    --color-primary-950: 8 47 73;
+
+    --color-secondary-50: 248 250 252;
+    --color-secondary-100: 241 245 249;
+    --color-secondary-200: 226 232 240;
+    --color-secondary-300: 203 213 225;
+    --color-secondary-400: 148 163 184;
+    --color-secondary-500: 100 116 139;
+    --color-secondary-600: 71 85 105;
+    --color-secondary-700: 51 65 85;
+    --color-secondary-800: 30 41 59;
+    --color-secondary-900: 15 23 42;
+    --color-secondary-950: 2 6 23;
+    
+    --color-accent-50: 236 254 255;
+    --color-accent-100: 207 250 254;
+    --color-accent-200: 165 243 252;
+    --color-accent-300: 103 232 249;
+    --color-accent-400: 34 211 238;
+    --color-accent-500: 6 182 212;
+    --color-accent-600: 8 145 178;
+    --color-accent-700: 14 116 144;
+    --color-accent-800: 21 94 117;
+    --color-accent-900: 22 78 99;
+    --color-accent-950: 8 51 68;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-white text-secondary-900 antialiased;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
+  }
+}
+
+@layer components {
+  /* Buttons với hiệu ứng nâng cao */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-all duration-200 
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 
+           disabled:pointer-events-none disabled:opacity-50 relative overflow-hidden;
+  }
+
+  .btn::after {
+    content: '';
+    @apply absolute inset-0 rounded-md opacity-0 transition-opacity duration-300 bg-white/10;
+  }
+  
+  .btn:hover::after {
+    @apply opacity-100;
+  }
+  
+  .btn:active {
+    @apply transform scale-95;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-base font-semibold;
+  }
+
+  .btn-md {
+    @apply px-4 py-2;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+  
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md hover:shadow-lg 
+           hover:from-primary-700 hover:to-primary-800;
+  }
+
+  .btn-secondary {
+    @apply bg-gradient-to-r from-secondary-600 to-secondary-700 text-white shadow-md hover:shadow-lg
+           hover:from-secondary-700 hover:to-secondary-800;
+  }
+  
+  .btn-outline-primary {
+    @apply border-2 border-primary-600 text-primary-600 bg-transparent hover:bg-primary-50 
+           hover:shadow-md shadow-primary-100/20 transition-all;
+  }
+
+  .btn-outline-secondary {
+    @apply border-2 border-secondary-600 text-secondary-600 bg-transparent hover:bg-secondary-50
+           hover:shadow-md shadow-secondary-100/20 transition-all;
+  }
+  
+  .btn-accent {
+    @apply bg-gradient-to-r from-accent-500 to-accent-600 text-white shadow-md hover:shadow-lg
+           hover:from-accent-600 hover:to-accent-700;
+  }
+
+  /* Cards với hiệu ứng nâng cao */
+  .card {
+    @apply bg-white rounded-xl border border-secondary-200 shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden;
+  }
+
+  .card-hover {
+    @apply hover:border-primary-200 hover:shadow-primary-100/10 transform hover:-translate-y-1 transition-all duration-300;
+  }
+
+  .card-header {
+    @apply px-6 py-4 border-b border-secondary-200;
+  }
+
+  .card-body {
+    @apply p-6;
+  }
+
+  .card-footer {
+    @apply px-6 py-4 border-t border-secondary-200 bg-secondary-50;
+  }
+  
+  /* Form controls với hiệu ứng đẹp hơn */
+  .shadow-soft {
+    @apply shadow-lg shadow-secondary-200/20;
+  }
+  
+  .input-label {
+    @apply block text-sm font-medium text-secondary-700 mb-1;
+  }
+  
+  .input {
+    @apply block w-full rounded-lg border-secondary-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 
+           sm:text-sm transition-all duration-200 hover:border-secondary-400;
+  }
+
+  .input-group {
+    @apply mb-4;
+  }
+
+  .select {
+    @apply block w-full rounded-lg border-secondary-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 
+           sm:text-sm transition-all duration-200 hover:border-secondary-400;
+  }
+
+  /* Badge & Chip styles */
+  .badge {
+    @apply inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .badge-primary {
+    @apply bg-primary-100 text-primary-800;
+  }
+  
+  .badge-secondary {
+    @apply bg-secondary-100 text-secondary-800;
+  }
+  
+  .badge-accent {
+    @apply bg-accent-100 text-accent-800;
+  }
+  
+  .badge-success {
+    @apply bg-green-100 text-green-800;
+  }
+  
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+  
+  .badge-error {
+    @apply bg-red-100 text-red-800;
+  }
+  
+  /* Animation utilities */
+  .fade-in {
+    @apply animate-[fadeIn_0.5s_ease-in-out];
+  }
+  
+  .slide-up {
+    @apply animate-[slideUp_0.3s_ease-out];
+  }
+  
+  .scale-in {
+    @apply animate-[scaleIn_0.3s_ease-out];
+  }
+  
+  .pulse {
+    @apply animate-pulse;
+  }
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
