@@ -26,16 +26,14 @@ COPY --from=builder /app/package.json ./
 COPY --from=builder /app/package-lock.json ./
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/run.sh ./run.sh
 
 # Install only production dependencies
 RUN npm ci --only=production
 
-# Set proper permissions for the run script
-RUN chmod +x ./run.sh
+# No additional setup needed
 
 # Expose the production port
 EXPOSE 4040
 
 # Start the application in production mode
-CMD ["/bin/sh", "./run.sh", "prod"]
+CMD ["npm", "start"]
