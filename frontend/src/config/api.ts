@@ -1,5 +1,6 @@
 // Cấu hình API cho ứng dụng
-export const API_BASE_URL = 'http://localhost:8088';
+// Sử dụng đường dẫn tương đối để Next.js có thể xử lý proxy
+export const API_BASE_URL = '/api';
 
 // Danh sách endpoint
 export const API_ENDPOINTS = {

@@ -44,13 +44,19 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Middleware
+
+app = FastAPI()
+
+# Thêm CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:4040",  # Origin của Next.js local
+        "https://scihorizone.hoangvu.id.vn",  # Origin của Next.js production
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Cho phép tất cả methods (GET, POST, v.v.)
+    allow_headers=["*"],  # Cho phép tất cả headers
 )
 
 # Temporary directory for uploaded files
