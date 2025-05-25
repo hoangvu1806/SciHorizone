@@ -10,7 +10,8 @@ export async function POST(request: NextRequest) {
     const jsonData = await request.json();
 
     // Forward the request to the backend API
-    const backendUrl = `${API_BASE_URL}${API_ENDPOINTS.GENERATE_EXAM(sessionId)}`;
+    // Sử dụng URL hoàn chỉnh đến host.docker.internal thay vì đường dẫn tương đối
+    const backendUrl = `http://host.docker.internal:8088${API_ENDPOINTS.GENERATE_EXAM(sessionId)}`;
     
     const response = await fetch(backendUrl, {
       method: 'POST',

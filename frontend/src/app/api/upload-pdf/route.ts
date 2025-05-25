@@ -10,7 +10,8 @@ export async function POST(req: NextRequest) {
     // Kiểm tra và log các trường dữ liệu để debug
     console.log('FormData keys:', Array.from(formData.keys()));
     
-    const backendUrl = `${API_BASE_URL}${API_ENDPOINTS.UPLOAD_PDF}`;
+    // Sử dụng URL hoàn chỉnh đến host.docker.internal thay vì đường dẫn tương đối
+    const backendUrl = `http://host.docker.internal:8088${API_ENDPOINTS.UPLOAD_PDF}`;
     
     // Không thay đổi formData, chuyển tiếp nguyên vẹn
     const response = await fetch(backendUrl, {
