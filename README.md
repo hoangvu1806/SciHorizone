@@ -44,12 +44,18 @@ By automating the exam creation process, our application saves hours of manual w
 - **Detailed Answer Explanations**: Learn from comprehensive explanations for each correct answer
 - **Performance Analysis**: Review strengths and weaknesses after completing an exam
 
-## 🏗️ System Architecture <a name = "architecture"></a>
+## 🛠️ System Architecture <a name = "architecture"></a>
 
 The application consists of two main components:
 
-1. **Backend Server**: A FastAPI-based Python server that handles PDF extraction, AI processing with Google Gemini, and exam generation
-2. **Frontend Application**: A Next.js web application that provides the user interface for uploading PDFs, configuring exams, and taking the generated tests
+1. **Backend Server**: A FastAPI-based Python server that handles PDF extraction, AI processing with Google Gemini, and exam generation. Được triển khai tại domain `apisci.hoangvu.id.vn`.
+2. **Frontend Application**: A Next.js web application that provides the user interface for uploading PDFs, configuring exams, and taking the generated tests. Được triển khai trong Docker container và có thể truy cập tại domain `scihorizone.hoangvu.id.vn`.
+
+### Communication Flow
+
+- Frontend gọi API đến `/api/*` sẽ được Next.js proxy đến `apisci.hoangvu.id.vn`
+- Backend xử lý yêu cầu và trả về kết quả cho frontend
+- Cấu hình CORS đã được thiết lập để cho phép các domain `scihorizone.hoangvu.id.vn` và `apisci.hoangvu.id.vn`
 
 ## 🏁 Getting Started <a name = "getting_started"></a>
 

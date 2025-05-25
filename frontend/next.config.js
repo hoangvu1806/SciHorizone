@@ -3,10 +3,10 @@ const nextConfig = {
   async rewrites() {
     return [
       // Cấu hình tổng quát để proxy tất cả các yêu cầu /api/* đến backend
-      // Sử dụng localhost vì container sẽ chạy với tùy chọn --network=host
+      // Sử dụng domain apisci.hoangvu.id.vn đã được ánh xạ đến FastAPI server
       {
         source: '/api/:path*',
-        destination: 'http://localhost:8088/:path*',
+        destination: 'https://apisci.hoangvu.id.vn/:path*',
       },
     ];
   },

@@ -10,8 +10,8 @@ export async function POST(req: NextRequest) {
     // Kiểm tra và log các trường dữ liệu để debug
     console.log('FormData keys:', Array.from(formData.keys()));
     
-    // Sử dụng localhost vì container sẽ chạy với tùy chọn --network=host
-    const backendUrl = `http://localhost:8088${API_ENDPOINTS.UPLOAD_PDF}`;
+    // Sử dụng domain apisci.hoangvu.id.vn đã được ánh xạ đến FastAPI server
+    const backendUrl = `https://apisci.hoangvu.id.vn${API_ENDPOINTS.UPLOAD_PDF}`;
     
     // Không thay đổi formData, chuyển tiếp nguyên vẹn
     const response = await fetch(backendUrl, {

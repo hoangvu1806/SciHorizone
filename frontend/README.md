@@ -4,6 +4,16 @@
 
 This is the frontend application for the IELTS Exam Generator project, built with [Next.js](https://nextjs.org) and [Tailwind CSS](https://tailwindcss.com/). The frontend provides a user-friendly interface for uploading PDFs, configuring exam parameters, and taking the generated reading comprehension exams.
 
+## Triển khai
+
+Frontend được triển khai trong Docker container và có thể truy cập tại domain `scihorizone.hoangvu.id.vn`. Ứng dụng gọi API đến backend được triển khai tại `apisci.hoangvu.id.vn` thông qua cơ chế proxy của Next.js.
+
+### Cấu hình API
+
+- Tất cả các yêu cầu đến `/api/*` sẽ được Next.js proxy đến `https://apisci.hoangvu.id.vn/*`
+- Các API endpoint được cấu hình trong `src/config/api.ts`
+- Các API route trong `src/app/api/` sử dụng URL hoàn chỉnh đến backend
+
 ## Features
 
 - **Modern UI**: Clean, responsive interface built with Tailwind CSS

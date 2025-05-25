@@ -53,6 +53,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:4040",  # Origin của Next.js local
         "https://scihorizone.hoangvu.id.vn",  # Origin của Next.js production
+        "https://apisci.hoangvu.id.vn",  # Domain API mới
     ],
     allow_credentials=True,
     allow_methods=["*"],  # Cho phép tất cả methods (GET, POST, v.v.)

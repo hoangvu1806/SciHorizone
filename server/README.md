@@ -2,6 +2,12 @@
 
 Backend server for converting scientific papers (PDF) into standardized IELTS/TOEIC reading comprehension exams.
 
+## Triển khai
+
+Server được triển khai tại domain `apisci.hoangvu.id.vn` và cung cấp API cho frontend ứng dụng được triển khai tại `scihorizone.hoangvu.id.vn`.
+
+Cấu hình CORS đã được thiết lập để cho phép các domain `scihorizone.hoangvu.id.vn` và `apisci.hoangvu.id.vn` gọi API.
+
 ## Overview
 
 The server provides the following functionalities:
