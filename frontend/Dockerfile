@@ -21,7 +21,7 @@ ENV NODE_ENV=production
 ENV PORT=4040
 
 # Copy only necessary files from builder
-COPY --from=builder /app/next.config.cjs ./
+COPY --from=builder /app/next.config.js ./
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/package-lock.json ./
 COPY --from=builder /app/public ./public
