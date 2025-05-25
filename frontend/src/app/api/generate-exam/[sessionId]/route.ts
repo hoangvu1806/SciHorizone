@@ -3,10 +3,10 @@ import { API_BASE_URL, API_ENDPOINTS } from '@/config/api';
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { sessionId: string } }
+  context: { params: { sessionId: string } }
 ) {
   try {
-    const sessionId = params.sessionId;
+    const sessionId = context.params.sessionId;
     const jsonData = await req.json();
 
     // Forward the request to the backend API
