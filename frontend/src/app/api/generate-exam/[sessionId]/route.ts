@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { API_BASE_URL, API_ENDPOINTS } from '@/config/api';
 
-export async function POST(
-  req: NextRequest,
-  context: { params: { sessionId: string } }
-) {
+export async function POST(request: NextRequest) {
   try {
-    const sessionId = context.params.sessionId;
-    const jsonData = await req.json();
+    // Extract sessionId from URL path
+    const url = request.url;
+    const sessionId = url.split('/').pop() || '';
+    
+    const jsonData = await request.json();
 
     // Forward the request to the backend API
     const backendUrl = `${API_BASE_URL}${API_ENDPOINTS.GENERATE_EXAM(sessionId)}`;
