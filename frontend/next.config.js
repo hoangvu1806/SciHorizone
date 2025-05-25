@@ -3,10 +3,10 @@ const nextConfig = {
   async rewrites() {
     return [
       // Cấu hình tổng quát để proxy tất cả các yêu cầu /api/* đến backend
-      // Sử dụng IP của Docker host (172.17.0.1 là gateway mặc định của Docker trên Linux)
+      // Sử dụng localhost vì container sẽ chạy với tùy chọn --network=host
       {
         source: '/api/:path*',
-        destination: 'http://172.17.0.1:8088/:path*',
+        destination: 'http://localhost:8088/:path*',
       },
     ];
   },

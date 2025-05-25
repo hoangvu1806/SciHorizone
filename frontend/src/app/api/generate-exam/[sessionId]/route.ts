@@ -10,8 +10,8 @@ export async function POST(request: NextRequest) {
     const jsonData = await request.json();
 
     // Forward the request to the backend API
-    // Sử dụng IP của Docker host (172.17.0.1 là gateway mặc định của Docker trên Linux)
-    const backendUrl = `http://172.17.0.1:8088${API_ENDPOINTS.GENERATE_EXAM(sessionId)}`;
+    // Sử dụng localhost vì container sẽ chạy với tùy chọn --network=host
+    const backendUrl = `http://localhost:8088${API_ENDPOINTS.GENERATE_EXAM(sessionId)}`;
     
     const response = await fetch(backendUrl, {
       method: 'POST',

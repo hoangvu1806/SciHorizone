@@ -10,8 +10,8 @@ export async function POST(req: NextRequest) {
     // Kiểm tra và log các trường dữ liệu để debug
     console.log('FormData keys:', Array.from(formData.keys()));
     
-    // Sử dụng IP của Docker host (172.17.0.1 là gateway mặc định của Docker trên Linux)
-    const backendUrl = `http://172.17.0.1:8088${API_ENDPOINTS.UPLOAD_PDF}`;
+    // Sử dụng localhost vì container sẽ chạy với tùy chọn --network=host
+    const backendUrl = `http://localhost:8088${API_ENDPOINTS.UPLOAD_PDF}`;
     
     // Không thay đổi formData, chuyển tiếp nguyên vẹn
     const response = await fetch(backendUrl, {
