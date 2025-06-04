@@ -50,7 +50,7 @@ class LLM:
         else:
             self.system_prompt = os.getenv("GEMINI_SYSTEM_PROMPT")
 
-        # Khởi tạo model
+        # Initialize model
         self._llm = self._initialize_llm()
 
     def _load_system_prompt(self, file_path: str) -> Optional[str]:
@@ -63,13 +63,13 @@ class LLM:
             return None
 
     def _initialize_llm(self) -> GoogleGenerativeAI:
-        """Khởi tạo model Google Gemini."""
+        """Initialize Google Gemini model."""
         if not self.api_key:
             raise ValueError(
                 "API key không được cung cấp và không tìm thấy trong biến môi trường GOOGLE_API_KEY"
             )
 
-        # Cấu hình safety_settings với định dạng đúng
+        # Configure safety_settings with the correct format
         safety_settings = {
             HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
             HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
@@ -105,7 +105,7 @@ class LLM:
         **kwargs: Any,
     ) -> Union[Dict[str, Any], T]:
 
-        # Tạo prompt yêu cầu trả về định dạng JSON
+        # Create prompt requesting JSON format response
         json_prompt = prompt
         if schema:
             json_prompt = f"""
@@ -118,15 +118,15 @@ Câu hỏi: {prompt}
 LƯU Ý QUAN TRỌNG: 
 1. Chỉ trả về JSON, không kèm theo giải thích hoặc giới thiệu.
 2. KHÔNG thêm comments (ghi chú) vào JSON.
-3. Mỗi field chỉ xuất hiện một lần trong mỗi đối tượng.
+3. Each field should appear only once in each object.
 4. Đảm bảo JSON hợp lệ để có thể parse.
-5. ĐỐI VỚI ĐỀ IELTS READING:
+5. FOR IELTS READING EXAMS:
    - Mỗi passage PHẢI có CHÍNH XÁC 14 câu hỏi (5-4-5), không được ít hơn
    - Tính toán số từ chính xác cho mỗi passage (word_count)
    - Passage 1: 700-1000 từ (KHÔNG ĐƯỢC DƯỚI 700 từ)
    - Passage 2: 700-1200 từ (KHÔNG ĐƯỢC DƯỚI 700 từ)
    - Passage 3: 750-1500 từ (KHÔNG ĐƯỢC DƯỚI 750 từ)
-   - Chỉ tạo passage mà người dùng yêu cầu nếu có chỉ định
+   - Only create passages that the user specifically requests
 """
         else:
             json_prompt = f"""
@@ -179,28 +179,28 @@ LƯU Ý QUAN TRỌNG:
                 last_error = e
                 retry_count += 1
                 
-                # Nếu lỗi và còn lượt thử, đơn giản hóa prompt
+                # If error and retries remaining, simplify the prompt
                 if retry_count <= max_retries:
-                    print(f"Lỗi JSON, thử lại lần {retry_count}/{max_retries}: {str(e)}")
+                    print(f"JSON error, retrying {retry_count}/{max_retries}: {str(e)}")
                     
-                    # Tạo prompt đơn giản hơn với yêu cầu rõ ràng hơn về cú pháp JSON
+                    # Create a simpler prompt with clearer requirements about JSON syntax
                     json_prompt = f"""
-TÔI CẦN BẠN TRẢ VỀ JSON HỢP LỆ. Lần trước bạn tạo JSON không hợp lệ.
+I NEED YOU TO RETURN VALID JSON. Last time you created invalid JSON.
 
-Lỗi cụ thể: {str(e)}
+Specific error: {str(e)}
 
-Hãy sửa lỗi và trả về một JSON hoàn toàn hợp lệ. CHẮC CHẮN CHECK LẠI CÚ PHÁP JSON trước khi trả lời.
+Please fix the error and return completely valid JSON. MAKE SURE TO CHECK JSON SYNTAX before responding.
 
-Tuân thủ schema:
-{json.dumps(schema, indent=2, ensure_ascii=False) if schema else "Object JSON tùy ý, miễn là hợp lệ"}
+Follow the schema:
+{json.dumps(schema, indent=2, ensure_ascii=False) if schema else "Object JSON of your choice, as long as it is valid"}
 
-Câu hỏi: {prompt}
+Question: {prompt}
 
 CHÚ Ý:
 - CHỈ TRẢ VỀ JSON, không kèm theo lời giải thích
 - KHÔNG thêm comment
 - Kiểm tra CẨN THẬN cú pháp JSON
-- Mọi key và value phải có định dạng chính xác
+- All keys and values must have the correct format
 - Đối với mảng và object, phải đóng mở ngoặc đúng cú pháp
 - Các phần tử trong mảng phải phân tách bằng dấu phẩy
 - Các cặp key-value phải phân tách bằng dấu phẩy
@@ -210,13 +210,13 @@ CHÚ Ý:
                         f"Không thể parse JSON sau {max_retries} lần thử: {str(last_error)}\nNội dung trả về: {result_text}"
                     )
                     
-        # Nếu đã hết số lần thử
+        # If all retries have been used
         raise ValueError(
             f"Không thể parse JSON sau {max_retries} lần thử: {str(last_error)}\nNội dung trả về: {result_text}"
         )
 
     def create_chain(self, prompt_template: str, output_key: str = "text") -> LLMChain:
-        """Tạo LLMChain với prompt template."""
+        """Create LLMChain with prompt template."""
         prompt = PromptTemplate.from_template(prompt_template)
         return LLMChain(llm=self._llm, prompt=prompt, output_key=output_key)
 
@@ -241,30 +241,30 @@ CHÚ Ý:
 
     @classmethod
     def from_defaults(cls):
-        """Tạo instance với cấu hình mặc định."""
+        """Create instance with default configuration."""
         return cls()
 
     @classmethod
     def creative(cls, api_key: str = None):
-        """Tạo instance với cấu hình sáng tạo cao."""
+        """Create instance with high creativity configuration."""
         return cls(temperature=0.9, top_p=0.98, top_k=50, api_key=api_key)
 
     @classmethod
     def precise(cls, api_key: str = None):
-        """Tạo instance với cấu hình chính xác cao."""
+        """Create instance with high precision configuration."""
         return cls(temperature=0.2, top_p=0.85, top_k=20, api_key=api_key)
 
     @classmethod
     def with_system_prompt(
         cls, system_prompt_file: str = "system_prompt.md", api_key: str = None
     ):
-        """Tạo instance với system prompt từ file."""
+        """Create instance with system prompt from file."""
         return cls(system_prompt_file=system_prompt_file, api_key=api_key)
 
 
 if __name__ == "__main__":
     try:
-        # Tạo LLM với system prompt từ file
+        # Create LLM with system prompt from file
         llm = LLM.with_system_prompt()
 
         # SCHEMA 1: IELTS Reading Analysis
@@ -297,25 +297,25 @@ if __name__ == "__main__":
                             "difficulty_level": {
                                 "type": "string",
                                 "enum": ["Dễ", "Trung bình", "Khó"],
-                                "description": "Mức độ khó",
+                                "description": "Difficulty level",
                             },
                             "main_topic": {
                                 "type": "string",
-                                "description": "Chủ đề chính của đoạn văn",
+                                "description": "Main topic of the passage",
                             },
                             "question_types": {
                                 "type": "array",
                                 "items": {"type": "string"},
-                                "description": "Các dạng câu hỏi có thể xuất hiện",
+                                "description": "Question types that may appear",
                             },
                             "vocabulary_level": {
                                 "type": "string",
                                 "enum": ["Cơ bản", "Trung cấp", "Nâng cao"],
-                                "description": "Mức độ từ vựng",
+                                "description": "Vocabulary level",
                             },
                             "suggested_time": {
                                 "type": "integer",
-                                "description": "Thời gian đề xuất để hoàn thành (phút)",
+                                "description": "Suggested time to complete (minutes)",
                             },
                         },
                     },
@@ -402,7 +402,7 @@ if __name__ == "__main__":
                         "question_types": {
                             "type": "array",
                             "items": {"type": "string"},
-                            "description": "Các dạng câu hỏi xuất hiện",
+                            "description": "Question types that appear",
                         },
                         "estimated_correct": {
                             "type": "integer",

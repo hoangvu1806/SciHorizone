@@ -47,17 +47,18 @@ app = FastAPI(
 
 app = FastAPI()
 
-# Thêm CORS middleware
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:4040",  # Origin của Next.js local
-        "https://scihorizone.hoangvu.id.vn",  # Origin của Next.js production
-        "https://apisci.hoangvu.id.vn",  # Domain API mới
+        "http://localhost:3000",
+        "http://localhost:4040",  # Next.js local origin
+        "https://scihorizone.hoangvu.id.vn",  # Next.js production origin
+        "https://apisci.hoangvu.id.vn",  # New API domain
     ],
     allow_credentials=True,
-    allow_methods=["*"],  # Cho phép tất cả methods (GET, POST, v.v.)
-    allow_headers=["*"],  # Cho phép tất cả headers
+    allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
 )
 
 # Temporary directory for uploaded files
@@ -92,26 +93,55 @@ async def read_root():
 
 
 @app.post("/upload-pdf")
-async def upload_pdf(pdf_file: UploadFile = File(...)):
-    """Upload PDF file and extract content."""
-    if not pdf_file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are accepted")
+async def upload_pdf(pdf_file: Optional[UploadFile] = File(None), url: Optional[str] = Form(None)):
+    """Upload PDF file or provide URL and extract content."""
+    # Validate input: either pdf_file or url must be provided
+    if pdf_file is None and (url is None or url.strip() == ""):
+        raise HTTPException(status_code=400, detail="Either a PDF file or a valid URL must be provided")
     
     # Create new session
     session_id = str(uuid.uuid4())
+    file_path = None
+    filename = None
     
-    # Save file to temporary directory
-    file_path = os.path.join(UPLOAD_DIR, f"{session_id}_{pdf_file.filename}")
     try:
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(pdf_file.file, buffer)
-        
-        # Close uploaded file to avoid file lock
-        await pdf_file.close()
-        
-        # Create PaperToExam instance and extract content
+        # Create PaperToExam instance
         paper_to_exam = PaperToExam()
         
+        if pdf_file is not None:
+            # Handle file upload
+            if not pdf_file.filename.lower().endswith(".pdf"):
+                raise HTTPException(status_code=400, detail="Only PDF files are accepted")
+            
+            # Save file to temporary directory
+            filename = pdf_file.filename
+            file_path = os.path.join(UPLOAD_DIR, f"{session_id}_{filename}")
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(pdf_file.file, buffer)
+            
+            # Close uploaded file to avoid file lock
+            await pdf_file.close()
+        else:
+            # Handle URL
+            # Not requiring URL to end with .pdf as many PDF URLs don't have the extension
+            
+            # Download PDF from URL
+            try:
+                response = requests.get(url, stream=True, timeout=30)
+                response.raise_for_status()  # Raise exception for 4XX/5XX responses
+                
+                # Extract filename from URL or use default
+                filename = url.split("/")[-1] if "/" in url else "document.pdf"
+                file_path = os.path.join(UPLOAD_DIR, f"{session_id}_{filename}")
+                
+                # Save downloaded file
+                with open(file_path, "wb") as buffer:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        buffer.write(chunk)
+            except requests.RequestException as e:
+                raise HTTPException(status_code=400, detail=f"Error downloading PDF from URL: {str(e)}")
+        
+        # Extract content from PDF
         try:
             markdown_content = paper_to_exam.extract_pdf(file_path)
         except RuntimeError as e:
@@ -125,17 +155,25 @@ async def upload_pdf(pdf_file: UploadFile = File(...)):
                 raise e
         
         # Save session information
-        sessions[session_id] = {
+        source_type = "file" if pdf_file is not None else "url"
+        session_info = {
             "file_path": file_path,
             "paper_to_exam": paper_to_exam,
-            "filename": pdf_file.filename
+            "filename": filename,
+            "source_type": source_type
         }
         
+        if source_type == "url":
+            session_info["original_url"] = url
+            
+        sessions[session_id] = session_info
+        
+        # Count words in extracted content
         word_count = paper_to_exam.count_words(markdown_content)
         
         return {
             "session_id": session_id,
-            "filename": pdf_file.filename,
+            "filename": filename,
             "word_count": word_count,
             "status": "success",
             "message": f"Successfully extracted {word_count} words"
@@ -349,33 +387,32 @@ async def cleanup_session(session_id: str, delay_minutes: int = 30):
         if "file_path" in session and os.path.exists(session["file_path"]):
             try:
                 # Try to close all handles before deleting on Windows
-                # Thử đóng tất cả handle trước khi xóa trên Windows
                 import gc
-                gc.collect()  # Gợi ý thu gom rác
+                gc.collect()  # Suggest garbage collection
                 
-                # Thử tối đa 3 lần
+                # Try up to 3 times
                 for _ in range(3):
                     try:
                         os.remove(session["file_path"])
-                        print(f"Đã xóa file tạm: {session['file_path']}")
+                        print(f"Deleted temporary file: {session['file_path']}")
                         break
                     except PermissionError:
-                        # Nếu file đang bị sử dụng, đợi và thử lại
+                        # If file is in use, wait and try again
                         await asyncio.sleep(2)
                     except Exception as e:
-                        print(f"Không thể xóa file tạm: {str(e)}")
+                        print(f"Cannot delete temporary file: {str(e)}")
                         break
             except Exception as e:
-                print(f"Lỗi khi xóa file: {str(e)}")
+                print(f"Error deleting file: {str(e)}")
         
         # Delete session
         del sessions[session_id]
-        print(f"Đã xóa phiên làm việc: {session_id}")
+        print(f"Deleted session: {session_id}")
 
 
 def start_server(host: str = "0.0.0.0", port: int = 8000, reload: bool = False):
-    """Khởi động FastAPI server."""
-    print(f"Khởi động Paper To Exam API tại http://{host}:{port}")
+    """Start FastAPI server."""
+    print(f"Starting Paper To Exam API at http://{host}:{port}")
     uvicorn.run("server:app", host=host, port=port, reload=reload)
 
 
@@ -383,9 +420,9 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description="Paper To Exam API Server")
-    parser.add_argument("--host", default="0.0.0.0", help="Host để bind server (mặc định: 0.0.0.0)")
-    parser.add_argument("--port", type=int, default=8000, help="Cổng để bind server (mặc định: 8000)")
-    parser.add_argument("--reload", action="store_true", help="Bật chế độ tự động reload khi có thay đổi code")
+    parser.add_argument("--host", default="0.0.0.0", help="Host to bind server (default: 0.0.0.0)")
+    parser.add_argument("--port", type=int, default=8000, help="Port to bind server (default: 8000)")
+    parser.add_argument("--reload", action="store_true", help="Enable auto-reload when code changes")
     
     args = parser.parse_args()
     start_server(host=args.host, port=args.port, reload=args.reload) 

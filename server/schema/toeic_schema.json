@@ -1,9 +1,21 @@
 {
     "type": "object",
     "properties": {
+        "exam_type": {
+            "type": "string",
+            "enum": ["TOEIC"],
+            "description": "Type of exam"
+        },
+        "part_number": {
+            "type": "integer",
+            "enum": [5, 6, 7],
+            "description": "TOEIC Reading part number (5, 6, or 7)"
+        },
         "estimated_score": {
             "type": "integer",
-            "description": "Estimated TOEIC Reading score (scale 5-495)"
+            "minimum": 5,
+            "maximum": 495,
+            "description": "Estimated TOEIC Reading score for this part (scale 5-495)"
         },
         "reading_passages": {
             "type": "array",
@@ -11,99 +23,41 @@
                 "type": "object",
                 "properties": {
                     "passage_number": {
-                        "type": "integer",
-                        "description": "Passage sequence number"
+                        "type": ["integer", "string"],
+                        "description": "Passage sequence number (integer for single passages, string like '1a', '1b' for multiple passages)"
                     },
                     "part": {
-                        "type": "string",
-                        "enum": ["Part 5", "Part 6", "Part 7"],
-                        "description": "Section of the TOEIC exam"
+                        "type": "integer",
+                        "enum": [6, 7],
+                        "description": "TOEIC Reading part number (Part 5 has no passages)"
                     },
                     "title": {
                         "type": "string",
-                        "description": "Title of the passage (if any)"
+                        "description": "Title of the passage"
                     },
                     "content": {
                         "type": "string",
-                        "description": "Passage content, synthesized or extracted from the original article"
+                        "description": "Passage content adapted from the original article for business context"
+                    },
+                    "word_count": {
+                        "type": "integer",
+                        "description": "Number of words in the passage"
+                    },
+                    "document_type": {
+                        "type": "string",
+                        "description": "Type of business document (email, memo, notice, article, etc.)"
                     }
-                }
+                },
+                "required": [
+                    "passage_number",
+                    "part",
+                    "title",
+                    "content",
+                    "word_count",
+                    "document_type"
+                ]
             },
-            "description": "Reading passages, synthesized from the original article"
-        },
-        "part5_analysis": {
-            "type": "object",
-            "properties": {
-                "grammar_focus": {
-                    "type": "array",
-                    "items": { "type": "string" },
-                    "description": "Key grammar points"
-                },
-                "vocabulary_level": {
-                    "type": "string",
-                    "enum": ["Basic", "Intermediate", "Advanced"],
-                    "description": "Vocabulary level"
-                },
-                "estimated_correct": {
-                    "type": "integer",
-                    "description": "Estimated number of correct answers (out of 30 questions)"
-                },
-                "challenging_areas": {
-                    "type": "array",
-                    "items": { "type": "string" },
-                    "description": "Challenging areas"
-                }
-            }
-        },
-        "part6_analysis": {
-            "type": "object",
-            "properties": {
-                "passage_types": {
-                    "type": "array",
-                    "items": { "type": "string" },
-                    "description": "Types of passages that appear"
-                },
-                "grammar_focus": {
-                    "type": "array",
-                    "items": { "type": "string" },
-                    "description": "Key grammar points"
-                },
-                "estimated_correct": {
-                    "type": "integer",
-                    "description": "Estimated number of correct answers (out of 16 questions)"
-                },
-                "challenging_questions": {
-                    "type": "array",
-                    "items": { "type": "string" },
-                    "description": "Challenging questions"
-                }
-            }
-        },
-        "part7_analysis": {
-            "type": "object",
-            "properties": {
-                "passage_types": {
-                    "type": "array",
-                    "items": { "type": "string" },
-                    "description": "Types of passages that appear, each passage has its own distinct topic"
-                },
-                "question_types": {
-                    "type": "array",
-                    "items": { "type": "string" },
-                    "description": "Exactly 3 question types for each passage, type 1 has 5 questions, type 2 has 4 questions, type 3 has 5 questions",
-                    "minItems": 3,
-                    "maxItems": 3
-                },
-                "estimated_correct": {
-                    "type": "integer",
-                    "description": "Estimated number of correct answers (out of 54 questions)"
-                },
-                "challenging_passages": {
-                    "type": "array",
-                    "items": { "type": "string" },
-                    "description": "Challenging passages"
-                }
-            }
+            "description": "Reading passages for Part 6 and 7 only (empty array for Part 5)"
         },
         "questions": {
             "type": "array",
@@ -115,22 +69,17 @@
                         "description": "Question sequence number"
                     },
                     "part": {
-                        "type": "string",
-                        "enum": ["Part 5", "Part 6", "Part 7"],
-                        "description": "Exam section"
+                        "type": "integer",
+                        "enum": [5, 6, 7],
+                        "description": "TOEIC Reading part number"
                     },
                     "passage_reference": {
-                        "type": "integer",
-                        "description": "Link to the corresponding passage_number (for Part 6 and 7)"
-                    },
-                    "question_category": {
-                        "type": "integer",
-                        "enum": [1, 2, 3],
-                        "description": "Question type (1, 2 or 3) - each passage has 3 types, type 1 has 5 questions, type 2 has 4 questions, type 3 has 5 questions"
+                        "type": ["integer", "string", "null"],
+                        "description": "Reference to passage_number (null for Part 5, required for Part 6 and 7)"
                     },
                     "question_text": {
                         "type": "string",
-                        "description": "Question content"
+                        "description": "Question text with blank (___) for Part 5 and 6, or complete question for Part 7"
                     },
                     "options": {
                         "type": "object",
@@ -139,32 +88,86 @@
                             "B": { "type": "string" },
                             "C": { "type": "string" },
                             "D": { "type": "string" }
-                        }
+                        },
+                        "required": ["A", "B", "C", "D"]
                     },
                     "correct_answer": {
                         "type": "string",
+                        "enum": ["A", "B", "C", "D"],
                         "description": "Correct answer (A, B, C or D)"
                     },
                     "explanation": {
                         "type": "string",
-                        "description": "Answer explanation"
+                        "description": "Detailed explanation of why the answer is correct"
+                    },
+                    "grammar_point": {
+                        "type": "string",
+                        "description": "Grammar point being tested (for Part 5 and 6)"
+                    },
+                    "question_type": {
+                        "type": "string",
+                        "description": "Type of question (main idea, detail, inference, vocabulary, etc.)"
                     }
-                }
+                },
+                "required": [
+                    "question_number",
+                    "part",
+                    "question_text",
+                    "options",
+                    "correct_answer",
+                    "explanation",
+                    "question_type"
+                ]
             }
+        },
+        "part_analysis": {
+            "type": "object",
+            "description": "Analysis specific to the generated part",
+            "properties": {
+                "grammar_focus": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Key grammar points tested (for Part 5 and 6)"
+                },
+                "vocabulary_level": {
+                    "type": "string",
+                    "enum": ["Basic", "Intermediate", "Advanced"],
+                    "description": "Vocabulary difficulty level"
+                },
+                "estimated_correct": {
+                    "type": "integer",
+                    "description": "Estimated number of correct answers for this part"
+                },
+                "challenging_areas": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Areas that may be challenging for test takers"
+                },
+                "business_context": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Business contexts used in the questions"
+                }
+            },
+            "required": [
+                "vocabulary_level",
+                "estimated_correct",
+                "challenging_areas"
+            ]
         },
         "improvement_suggestions": {
             "type": "array",
             "items": { "type": "string" },
-            "description": "Đề xuất cải thiện"
+            "description": "Suggestions for improving performance on this part"
         }
     },
     "required": [
+        "exam_type",
+        "part_number",
         "estimated_score",
         "reading_passages",
-        "part5_analysis",
-        "part6_analysis",
-        "part7_analysis",
         "questions",
+        "part_analysis",
         "improvement_suggestions"
     ]
 }

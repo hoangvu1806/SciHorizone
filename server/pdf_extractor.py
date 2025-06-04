@@ -9,17 +9,17 @@ from typing import Optional, Dict, Any, Union
 class PDFExtractor:
     """
     Class thực hiện việc chuyển đổi PDF thành Markdown thông qua docling-serve.
-    Cung cấp các phương thức để trích xuất, làm sạch và lưu nội dung.
+    Provides methods to extract, clean, and save content.
     """
     
     DEFAULT_DOCLING_URL = "http://localhost:5001/v1alpha/convert/file"
     
     def __init__(self, docling_url: str = None):
         """
-        Khởi tạo đối tượng PDFExtractor.
+        Initialize PDFExtractor object.
         
         Args:
-            docling_url: URL của docling-serve, mặc định là http://localhost:5001/v1alpha/convert/file
+            docling_url: URL of docling-serve, default is http://localhost:5001/v1alpha/convert/file
         """
         self.docling_url = docling_url or self.DEFAULT_DOCLING_URL
         self.markdown_content = None
@@ -30,19 +30,19 @@ class PDFExtractor:
     def extract_from_file(self, file_path: str) -> str:
         self.source_path = file_path
         if not os.path.isfile(file_path):
-            raise FileNotFoundError(f"Không tìm thấy file: {file_path}")
+            raise FileNotFoundError(f"File not found: {file_path}")
         
         with open(file_path, "rb") as f:
             files = {
                 "files": (os.path.basename(file_path), f, "application/pdf")
             }
             try:
-                print("pdf_extractor: Đang trích xuất nội dung từ PDF...")
+                print("pdf_extractor: Extracting content from PDF...")
                 self.markdown_content = self._send_request(files)
             except RuntimeError as e:
                 print("pdf_extractor: " + str(e))
-                if "Lỗi kết nối đến docling-serve" in str(e) and not self.use_fallback:
-                    print("pdf_extractor: Docling-serve không khả dụng, đang sử dụng phương thức dự phòng...")
+                if "Connection error to docling-serve" in str(e) and not self.use_fallback:
+                    print("pdf_extractor: Docling-serve not available, using fallback methods...")
                     self.use_fallback = True
                     self.markdown_content = self._extract_text_fallback(file_path)
                 else:
@@ -53,8 +53,29 @@ class PDFExtractor:
     def _extract_text_fallback(self, file_path: str) -> str:
         extracted_text = ""
         
+        # First try fitz (PyMuPDF)
+        try:
+            import fitz  # PyMuPDF
+            print("Trying extraction with fitz (PyMuPDF)...")
+            doc = fitz.open(file_path)
+            for page_num in range(len(doc)):
+                page = doc[page_num]
+                extracted_text += page.get_text() + "\n\n"
+            doc.close()
+            
+            if extracted_text:
+                print("fitz extraction successful")
+                return f"# Extracted content\n\n{extracted_text}"
+        except ImportError:
+            print("fitz (PyMuPDF) not installed, trying other methods")
+            pass
+        except Exception as e:
+            print(f"fitz extraction failed: {str(e)}")
+        
+        # Then try PyPDF2
         try:
             import PyPDF2
+            print("Trying extraction with PyPDF2...")
             with open(file_path, 'rb') as f:
                 pdf_reader = PyPDF2.PdfReader(f)
                 for page_num in range(len(pdf_reader.pages)):
@@ -62,15 +83,18 @@ class PDFExtractor:
                     extracted_text += page.extract_text() + "\n\n"
                 
                 if extracted_text:
+                    print("PyPDF2 extraction successful")
                     return f"# Extracted content\n\n{extracted_text}"
         except ImportError:
+            print("PyPDF2 not installed, trying other methods")
             pass
         except Exception as e:
             print(f"PyPDF2 extraction failed: {str(e)}")
         
-        # Thử với pdfplumber
+        # Then try pdfplumber
         try:
             import pdfplumber
+            print("Trying extraction with pdfplumber...")
             with pdfplumber.open(file_path) as pdf:
                 for page in pdf.pages:
                     text = page.extract_text()
@@ -78,26 +102,31 @@ class PDFExtractor:
                         extracted_text += text + "\n\n"
                 
                 if extracted_text:
+                    print("pdfplumber extraction successful")
                     return f"# Extracted content\n\n{extracted_text}"
         except ImportError:
+            print("pdfplumber not installed, trying other methods")
             pass
         except Exception as e:
             print(f"pdfplumber extraction failed: {str(e)}")
         
+        # Finally try textract
         try:
             import textract
+            print("Trying extraction with textract...")
             extracted_text = textract.process(file_path, method='pdfminer').decode('utf-8')
             if extracted_text:
+                print("textract extraction successful")
                 return f"# Extracted content\n\n{extracted_text}"
         except ImportError:
+            print("textract not installed, all fallback methods failed")
             pass
         except Exception as e:
             print(f"textract extraction failed: {str(e)}")
         
-        # Nếu tất cả phương pháp đều thất bại
         if not extracted_text:
-            raise RuntimeError("Không thể trích xuất nội dung từ PDF. docling-serve không khả dụng và các phương pháp dự phòng đều thất bại.")
-            
+            raise RuntimeError("Cannot extract content from PDF. docling-serve is not available and all fallback methods failed.")
+        
         return extracted_text
     
     def extract_from_url(self, url: str) -> str:
@@ -109,27 +138,19 @@ class PDFExtractor:
         try:
             self.markdown_content = self._send_request(files)
         except RuntimeError as e:
-            if "Lỗi kết nối đến docling-serve" in str(e) and not self.use_fallback:
+            if "Error connecting to docling-serve" in str(e) and not self.use_fallback:
                 print("Docling-serve không khả dụng, đang tải PDF từ URL và sử dụng phương thức dự phòng...")
                 self.use_fallback = True
-                
-                # Tải PDF từ URL
                 try:
                     temp_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp_download.pdf")
                     r = requests.get(url, stream=True)
                     r.raise_for_status()
-                    
                     with open(temp_file, 'wb') as f:
                         for chunk in r.iter_content(chunk_size=8192):
                             f.write(chunk)
-                    
-                    # Trích xuất nội dung từ file tạm
                     self.markdown_content = self._extract_text_fallback(temp_file)
-                    
-                    # Xóa file tạm
                     if os.path.exists(temp_file):
                         os.remove(temp_file)
-                    
                 except Exception as dl_error:
                     raise RuntimeError(f"Không thể tải PDF từ URL: {str(dl_error)}")
             else:
@@ -142,10 +163,9 @@ class PDFExtractor:
             "output_formats": "md"
         }
         try:
-            resp = requests.post(self.docling_url, files=files, data=data, timeout=180)  # Thêm timeout
+            resp = requests.post(self.docling_url, files=files, data=data, timeout=180)  # Add timeout
             resp.raise_for_status()
             result = resp.json()
-
             md = None
             if "document" in result:
                 md = result["document"].get("md_content")
@@ -153,18 +173,18 @@ class PDFExtractor:
                 md = result.get("md_content")
             
             if not md:
-                raise RuntimeError("pdf_extractor: Không nhận được nội dung Markdown từ server. Response keys: {list(result.keys())}")
+                raise RuntimeError("pdf_extractor: Did not receive Markdown content from server. Response keys: {list(result.keys())}")
             
             return md
         except requests.RequestException as e:
-            raise RuntimeError(f"pdf_extractor: Lỗi kết nối đến docling-serve: {str(e)}")
+            raise RuntimeError(f"pdf_extractor: Connection error to docling-serve: {str(e)}")
     
     def clean_base64_images(self, min_length: int = 100) -> str:
         if not self.markdown_content:
-            raise ValueError("pdf_extractor: Chưa có nội dung Markdown để làm sạch. Hãy trích xuất nội dung trước.")
+            raise ValueError("pdf_extractor: No Markdown content to clean. Please extract content first.")
         
         pattern = rf'!\[.*?\]\(data:image\/[^;]+;base64,[a-zA-Z0-9+/=]{{{min_length},}}\)'
-        self.markdown_content = re.sub(pattern, '![Ảnh đã được loại bỏ để giảm kích thước file]', self.markdown_content)
+        self.markdown_content = re.sub(pattern, '![Image removed to reduce file size]', self.markdown_content)
         
         return self.markdown_content
     
@@ -173,7 +193,7 @@ class PDFExtractor:
     
     def get_output_filename(self) -> str:
         if not self.source_path:
-            raise ValueError("pdf_extractor: Chưa có nguồn dữ liệu. Hãy gọi extract_from_file hoặc extract_from_url trước.")
+            raise ValueError("pdf_extractor: No data source. Please call extract_from_file or extract_from_url first.")
         
         if self.source_path.startswith(("http://", "https://")):
             parsed_url = urllib.parse.urlparse(self.source_path)
@@ -187,17 +207,17 @@ class PDFExtractor:
     
     def save_markdown(self, output_path: Optional[str] = None) -> str:
         if not self.markdown_content:
-            raise ValueError("Chưa có nội dung Markdown để lưu. Hãy trích xuất nội dung trước.")
+            raise ValueError("No Markdown content to save. Please extract content first.")
         
-        # Nếu không chỉ định output_path, sử dụng tên file mặc định
+        # If output_path is not specified, use default filename
         if not output_path:
             output_path = self.get_output_filename()
         
-        # Làm sạch ảnh base64 nếu tùy chọn được bật
+        # Clean base64 images if option is enabled
         if self.clean_images:
             self.clean_base64_images()
         
-        # Lưu nội dung Markdown vào file
+        # Save Markdown content to file
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(self.markdown_content)
         
@@ -215,7 +235,7 @@ class PDFExtractor:
 
 
 def main():
-    """Hàm main để chạy từ dòng lệnh"""
+    """Main function to run from command line"""
     if len(sys.argv) < 2:
         print("Usage: python pdf_extractor.py <file_path_or_url> [output_path]")
         sys.exit(1)
@@ -227,7 +247,7 @@ def main():
         extractor = PDFExtractor()
         saved_path = extractor.process(source, output_path)
         
-        print(f"Đã lưu nội dung Markdown vào file: {saved_path}")
+        print(f"Saved Markdown content to file: {saved_path}")
     except Exception as e:
         print(f"Error: {str(e)}")
         sys.exit(1)

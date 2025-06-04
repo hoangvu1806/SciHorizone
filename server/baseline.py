@@ -133,6 +133,7 @@ class PaperToExam:
 
     def _get_passage_instruction(self, passage_type: str) -> str:
         """Create passage instruction."""
+        # IELTS passage types
         if passage_type == "1":
             return """
 Create a TYPE 1 PASSAGE:
@@ -163,21 +164,34 @@ Create a TYPE 3 PASSAGE:
 - Author's viewpoints can be confusing
 - Must have EXACTLY 14 questions (5-4-5)
 """
+        # TOEIC part types - return the part number directly
+        elif passage_type in ["5", "6", "7"]:
+            return passage_type
+
         return ""
 
     def _create_prompt(
         self, exam_type: str, difficulty: str, passage_instruction: str
     ) -> str:
         """Create prompt for LLM."""
+        if exam_type == "IELTS":
+            return self._create_ielts_prompt(difficulty, passage_instruction)
+        elif exam_type == "TOEIC":
+            return self._create_toeic_prompt(difficulty, passage_instruction)
+        else:
+            raise ValueError(f"Unsupported exam type: {exam_type}")
+
+    def _create_ielts_prompt(self, difficulty: str, passage_instruction: str) -> str:
+        """Create prompt for IELTS exam."""
         return f"""
-Exam type: {exam_type}
+Exam type: IELTS
 Difficulty: {difficulty}
 
-Your task is to create a {exam_type} Reading exam with ONE PASSAGE based on the provided article content.
+Your task is to create an IELTS Reading exam with ONE PASSAGE based on the provided article content.
 Specifically, you need to:
 
 1. Create a reading passage based on the provided article content
-2. Follow the standard exam format
+2. Follow the standard IELTS exam format
 
 {passage_instruction}
 
@@ -192,14 +206,11 @@ Specifically, you need to:
 6. Use various question types from the list:
    - True/False/Not Given or Yes/No/Not Given
    - Matching headings (must always include options field listing matching options)
-   - Matching information (must always include options field listing matching options)
-   - Matching features (must always include options field listing matching options)
    - Matching sentence endings (must always include options field listing matching options)
    - Sentence completion
    - Summary/note/table/flow-chart completion
    - Multiple choice
    - List selection
-   - Diagram label completion
    - Short-answer questions
    Ensure that there are reasonable, intelligent options appropriate for band score {difficulty}
 
@@ -215,8 +226,168 @@ Original text:
 {self.markdown_content}
 """
 
+    def _create_toeic_prompt(self, difficulty: str, passage_instruction: str) -> str:
+        """Create prompt for TOEIC exam."""
+        part_number = passage_instruction.strip() if passage_instruction.strip().isdigit() else "5"
+        # Add special emphasis for Part 7
+        part_emphasis = ""
+        if part_number == "7":
+            part_emphasis = """
+CRITICAL REMINDER FOR PART 7:
+- You MUST create EXACTLY 20 questions numbered 147-166
+- You MUST create EXACTLY 7 passages (5 single + 2 double)
+- This is not optional - it is a strict requirement
+- Do not create fewer or more questions or passages
+"""
+
+        return f"""
+Exam type: TOEIC
+Part: {part_number}
+Difficulty: {difficulty}
+
+Your task is to create ONLY ONE PART of a TOEIC Reading exam based on the provided article content.
+You will create Part {part_number} following the standard TOEIC Reading format.
+
+IMPORTANT: Create ONLY Part {part_number}, not all parts.
+{part_emphasis}
+
+GENERAL REQUIREMENTS:
+1. Adapt the content to be business/workplace-oriented as appropriate for TOEIC
+2. Ensure all content is accurate according to the article, without fabrication
+3. Use professional vocabulary and business contexts
+4. All questions must have exactly 4 options (A, B, C, D)
+5. Each question must have a detailed explanation for the correct answer
+
+{self._get_part_specific_instructions(part_number, difficulty)}
+
+ANALYSIS REQUIREMENTS:
+- Provide analysis specific to Part {part_number} as specified in the schema
+- Include grammar focus areas (for Part 5 and 6)
+- Assess vocabulary level and challenging areas
+- Estimate correct answers based on difficulty level {difficulty}
+- Provide improvement suggestions specific to this part
+
+FORMAT REQUIREMENTS:
+1. Follow the TOEIC JSON schema structure precisely
+2. Set "part_number" field to {part_number}
+3. Set "exam_type" to "TOEIC"
+4. Include all required fields for Part {part_number}
+5. Do not add comments or notes to the JSON result
+6. The returned result must be valid JSON according to the provided schema
+7. IMPORTANT: Each question MUST have a detailed explanation field that explains why the answer is correct
+
+Original text:
+
+{self.markdown_content}
+"""
+
+    def _get_part_specific_instructions(self, part_number: str, difficulty: str) -> str:
+        """Get specific instructions for each TOEIC part."""
+        if part_number == "5":
+            return f"""
+PART 5 (Incomplete Sentences) REQUIREMENTS:
+- Create exactly 30 standalone sentences related to business and professional contexts
+- Each sentence should have one blank (___) with 4 options (A, B, C, D)
+- Test a variety of grammar points appropriate for TOEIC level {difficulty}
+- Include common TOEIC grammar points: verb tenses, prepositions, articles, word forms, etc.
+- Sentences should be independent and not require reading passages
+- Focus on workplace vocabulary and business scenarios
+- Each question must test only ONE grammar point clearly
+- Difficulty should match TOEIC score level {difficulty}
+
+Example format:
+"The quarterly report will be ___ to all department heads by Friday."
+A) distribute  B) distributed  C) distributing  D) distribution
+
+IMPORTANT: reading_passages array should be EMPTY for Part 5.
+"""
+        elif part_number == "6":
+            return f"""
+PART 6 (Text Completion) REQUIREMENTS:
+- Create exactly 4 short business texts (50-100 words each)
+- Each text should have exactly 4 blanks (16 questions total)
+- Use appropriate business document formats: emails, memos, notices, letters, etc.
+- Each blank should have 4 options (A, B, C, D)
+- Test both grammar and discourse cohesion
+- Questions should test: grammar, vocabulary, transitions, and text organization
+- Texts should be realistic business communications
+- Difficulty should match TOEIC score level {difficulty}
+
+Text types to use:
+- Business emails
+- Company memos
+- Meeting notices
+- Product announcements
+- Policy updates
+
+IMPORTANT: Create exactly 4 passages in reading_passages array, each with part=6.
+"""
+        elif part_number == "7":
+            return f"""
+PART 7 (Reading Comprehension) REQUIREMENTS:
+Create EXACTLY 20 questions numbered 147-166 (optimized for LLM processing).
+
+EXACT STRUCTURE REQUIRED:
+
+SECTION 1 - SINGLE PASSAGES (Questions 147-161): 15 questions total
+Create exactly 5 single passages with the following distribution:
+- Passage 1: 3 questions (147-149)
+- Passage 2: 3 questions (150-152)
+- Passage 3: 3 questions (153-155)
+- Passage 4: 3 questions (156-158)
+- Passage 5: 3 questions (159-161)
+Each passage: 100-200 words, business documents (emails, memos, ads, etc.)
+
+SECTION 2 - DOUBLE PASSAGES (Questions 162-166): 5 questions total
+Create exactly 1 set of double passages:
+- Set 1: Passages 6a & 6b with 5 questions (162-166)
+Each document: 150-250 words, related business documents
+
+MANDATORY REQUIREMENTS:
+1. EXACTLY 20 questions numbered 147-166
+2. EXACTLY 7 passages total (5 single + 2 double)
+3. Each question MUST have exactly 4 options (A, B, C, D)
+4. Use passage_number: integers for single (1-5), strings for double ("6a", "6b")
+5. All passages must be business-oriented and realistic
+6. Include various question types: main idea, detail, inference, vocabulary, application
+7. Difficulty level: {difficulty}
+
+DOCUMENT TYPES:
+- Business emails, memos, announcements
+- Job postings, applications, resumes
+- Product ads, reviews, specifications
+- Meeting agendas, minutes, schedules
+- Financial reports, invoices, receipts
+- News articles, policy documents
+
+QUESTION TYPES TO INCLUDE:
+- Main idea/purpose questions
+- Specific detail questions
+- Inference questions ("What is suggested/implied?")
+- Vocabulary in context
+- Reference questions ("What does 'it' refer to?")
+- Application questions ("What should X do next?")
+- Multiple document questions (for double passages)
+
+CREATE EXACTLY 20 questions - no more, no less.
+"""
+        else:
+            return "Invalid part number. Must be 5, 6, or 7."
+
     def _validate_result(self, result: Dict[str, Any], passage_type: str) -> None:
         """Check results from LLM."""
+        # Determine exam type
+        exam_type = result.get("exam_type", "IELTS")
+        
+        if exam_type == "IELTS":
+            self._validate_ielts_result(result, passage_type)
+        elif exam_type == "TOEIC":
+            self._validate_toeic_result(result)
+        else:
+            print(f"WARNING: Unknown exam type: {exam_type}")
+            
+    def _validate_ielts_result(self, result: Dict[str, Any], passage_type: str) -> None:
+        """Validate IELTS exam result."""
         # Check passage length
         if "reading_passage" in result:
             passage = result["reading_passage"]
@@ -266,6 +437,103 @@ Original text:
                 question_types[q_type] += 1
 
             print(f"Question distribution by type: {question_types}")
+
+    def _validate_toeic_result(self, result: Dict[str, Any]) -> None:
+        # Check part number
+        part_number = result.get("part_number")
+        # Check estimated score
+        if "estimated_score" in result:
+            score = result["estimated_score"]
+        else:
+            print("WARNING: Missing estimated score")
+
+        # Check reading passages based on part
+        if "reading_passages" in result:
+            passages = result["reading_passages"]
+            if not isinstance(passages, list):
+                print("WARNING: Reading passages data is not a list")
+            else:
+                if part_number == 5:
+                    if len(passages) != 0:
+                        print(f"WARNING: Part 5 should have 0 passages, found {len(passages)}")
+                    else:
+                        print("OK: Part 5 has no passages")
+                elif part_number == 6:
+                    if len(passages) != 4:
+                        print(f"WARNING: Part 6 should have 4 passages, found {len(passages)}")
+                    else:
+                        print("OK: Part 6 has 4 passages")
+                elif part_number == 7:
+                    # Part 7 should have: 5 single + 2 double = 7 passages total
+                    expected_passages = 7
+                    if len(passages) != expected_passages:
+                        print(f"WARNING: Part 7 should have {expected_passages} passages (5 single + 2 double), found {len(passages)}")
+                    else:
+                        print(f"OK: Part 7 has {len(passages)} passages")
+        else:
+            print("WARNING: Missing reading passages")
+
+        # Check questions
+        if "questions" in result:
+            questions = result["questions"]
+            if not isinstance(questions, list):
+                print("WARNING: Question data is not a list")
+                return
+
+            question_count = len(questions)
+
+            # Validate question count based on part
+            if part_number == 5:
+                expected_count = 30
+            elif part_number == 6:
+                expected_count = 16
+            elif part_number == 7:
+                expected_count = 20  # Optimized TOEIC Part 7 for LLM processing
+            else:
+                expected_count = 0
+
+            if part_number in [5, 6, 7]:
+                if question_count != expected_count:
+                    print(f"WARNING: Part {part_number} should have {expected_count} questions, found {question_count}")
+                else:
+                    print(f"OK: Part {part_number} has {question_count} questions")
+
+            # Check all questions have correct part number
+            for q in questions:
+                if q.get("part") != part_number:
+                    print(f"WARNING: Question {q.get('question_number', '?')} has wrong part number")
+
+            # Check options format
+            for q in questions:
+                if "options" in q:
+                    options = q["options"]
+                    if not isinstance(options, dict) or len(options) != 4:
+                        print(f"WARNING: Question {q.get('question_number', '?')} does not have exactly 4 options")
+                    elif not all(key in options for key in ["A", "B", "C", "D"]):
+                        print(f"WARNING: Question {q.get('question_number', '?')} missing A, B, C, or D options")
+        else:
+            print("WARNING: Missing questions")
+
+        # Check part analysis
+        if "part_analysis" not in result:
+            print("WARNING: Missing part_analysis")
+        else:
+            analysis = result["part_analysis"]
+            if not isinstance(analysis, dict):
+                print("WARNING: part_analysis is not a dict")
+            else:
+                required_fields = ["vocabulary_level", "estimated_correct", "challenging_areas"]
+                for field in required_fields:
+                    if field not in analysis:
+                        print(f"WARNING: Missing {field} in part_analysis")
+
+        # Check improvement suggestions
+        if "improvement_suggestions" not in result:
+            print("WARNING: Missing improvement suggestions")
+        elif not isinstance(result["improvement_suggestions"], list):
+            print("WARNING: Improvement suggestions is not a list")
+        else:
+            print(f"OK: Found {len(result['improvement_suggestions'])} improvement suggestions")
 
     def _save_result(
         self,
@@ -369,245 +637,3 @@ Original text:
             },
         }
 
-
-# FastAPI App
-app = FastAPI(
-    title="Paper To Exam API",
-    description="API to convert article to reading exam",
-    version="1.0.0",
-)
-
-# Middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Temporary storage for uploaded PDF files
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
-if not os.path.exists(UPLOAD_DIR):
-    os.makedirs(UPLOAD_DIR)
-
-# Session storage
-sessions = {}
-
-
-@app.get("/")
-async def read_root():
-    """Endpoint to check server status."""
-    return {"status": "ok", "message": "Paper To Exam API is running"}
-
-
-@app.post("/upload-pdf")
-async def upload_pdf(pdf_file: UploadFile = File(...)):
-    """Upload PDF file and extract content."""
-    if not pdf_file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are accepted")
-    
-    # Create new session
-    session_id = str(uuid.uuid4())
-    
-    # Save file to temporary directory
-    file_path = os.path.join(UPLOAD_DIR, f"{session_id}_{pdf_file.filename}")
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(pdf_file.file, buffer)
-    
-    # Create PaperToExam instance and extract content
-    try:
-        paper_to_exam = PaperToExam()
-        markdown_content = paper_to_exam.extract_pdf(file_path)
-        
-        # Save session information
-        sessions[session_id] = {
-            "file_path": file_path,
-            "paper_to_exam": paper_to_exam,
-            "filename": pdf_file.filename
-        }
-        
-        word_count = paper_to_exam.count_words(markdown_content)
-        
-        return {
-            "session_id": session_id,
-            "filename": pdf_file.filename,
-            "word_count": word_count,
-            "status": "success",
-            "message": f"Successfully extracted {word_count} words"
-        }
-    except Exception as e:
-        # Delete file if processing fails
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        raise HTTPException(status_code=500, detail=f"Error extracting PDF: {str(e)}")
-
-
-@app.post("/generate-exam/{session_id}")
-async def generate_exam(
-    session_id: str, 
-    request: ExamRequest,
-    background_tasks: BackgroundTasks
-):
-    """Create exam from extracted content."""
-    if session_id not in sessions:
-        raise HTTPException(status_code=404, detail="Session does not exist or has expired")
-    
-    session = sessions[session_id]
-    paper_to_exam = session["paper_to_exam"]
-    
-    try:
-        result = paper_to_exam.generate_exam(
-            exam_type=request.exam_type,
-            difficulty=request.difficulty,
-            passage_type=request.passage_type,
-            output_format=request.output_format
-        )
-        
-        # Create result filename
-        filename = f"{request.exam_type.lower()}_p{request.passage_type}_d{request.difficulty.replace('.', '')}"
-        if request.output_format == "json":
-            result_file = os.path.join(paper_to_exam.output_dir, f"{filename}.json")
-        else:
-            result_file = os.path.join(paper_to_exam.output_dir, f"{filename}.txt")
-        
-        # Save result to session
-        session["result_file"] = result_file
-        
-        # Delete temporary file after 30 minutes
-        background_tasks.add_task(cleanup_session, session_id)
-        
-        return {
-            "session_id": session_id,
-            "result": result,
-            "status": "success"
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error creating exam: {str(e)}")
-
-
-@app.get("/download-result/{session_id}")
-async def download_result(session_id: str):
-    """Download exam result."""
-    if session_id not in sessions or "result_file" not in sessions[session_id]:
-        raise HTTPException(status_code=404, detail="Result does not exist or has expired")
-    
-    result_file = sessions[session_id]["result_file"]
-    if not os.path.exists(result_file):
-        raise HTTPException(status_code=404, detail="Result file does not exist")
-    
-    filename = os.path.basename(result_file)
-    return FileResponse(
-        path=result_file, 
-        filename=filename,
-        media_type="application/octet-stream"
-    )
-
-
-@app.get("/session-info/{session_id}")
-async def get_session_info(session_id: str):
-    """Get session information."""
-    if session_id not in sessions:
-        raise HTTPException(status_code=404, detail="Session does not exist or has expired")
-    
-    session = sessions[session_id]
-    return {
-        "session_id": session_id,
-        "filename": session["filename"],
-        "has_result": "result_file" in session,
-        "status": "active"
-    }
-
-
-async def cleanup_session(session_id: str, delay_minutes: int = 30):
-    """Delete temporary files after a delay."""
-    import asyncio
-    
-    # Wait for a delay
-    await asyncio.sleep(delay_minutes * 60)
-    
-    # Check if session still exists
-    if session_id in sessions:
-        session = sessions[session_id]
-        
-        # Delete uploaded PDF file
-        if "file_path" in session and os.path.exists(session["file_path"]):
-            try:
-                os.remove(session["file_path"])
-            except Exception:
-                pass
-        
-        # Delete session
-        del sessions[session_id]
-
-
-def main():
-    """Main program."""
-    parser = argparse.ArgumentParser(description="Paper To Exam - Convert PDF to reading exam")
-    
-    # Command line arguments
-    cli_mode = parser.add_argument_group("Command line mode")
-    cli_mode.add_argument("--pdf", help="Path to PDF file")
-    cli_mode.add_argument(
-        "--exam-type", choices=["IELTS", "TOEIC"], default="IELTS", help="Exam type (default: IELTS)"
-    )
-    cli_mode.add_argument(
-        "--difficulty", default="7.0", help="Exam difficulty (default: 7.0)"
-    )
-    cli_mode.add_argument(
-        "--passage-type", choices=["1", "2", "3"], default="3", help="Passage type (default: 3)"
-    )
-    cli_mode.add_argument(
-        "--output-format", choices=["json", "text"], default="json", help="Output format (default: json)"
-    )
-    cli_mode.add_argument(
-        "--api-key", help="API key for LLM (if not provided, will use environment variable)"
-    )
-    
-    # Server mode arguments
-    server_mode = parser.add_argument_group("Server mode")
-    server_mode.add_argument(
-        "--server", action="store_true", help="Run in server mode"
-    )
-    server_mode.add_argument(
-        "--host", default="0.0.0.0", help="Host để bind server (mặc định: 0.0.0.0)"
-    )
-    server_mode.add_argument(
-        "--port", type=int, default=8000, help="Cổng để bind server (mặc định: 8000)"
-    )
-    
-    args = parser.parse_args()
-    
-    # Chế độ server
-    if args.server:
-        print(f"Khởi động server FastAPI tại http://{args.host}:{args.port}")
-        uvicorn.run("baseline:app", host=args.host, port=args.port, reload=False)
-        return
-    
-    # Chế độ command line
-    if not args.pdf:
-        parser.print_help()
-        print("\nLỗi: Cần chỉ định đường dẫn file PDF (--pdf)")
-        sys.exit(1)
-    
-    paper_to_exam = PaperToExam(api_key=args.api_key)
-    
-    # Trích xuất PDF
-    paper_to_exam.extract_pdf(args.pdf)
-    
-    # Tạo đề thi
-    result = paper_to_exam.generate_exam(
-        exam_type=args.exam_type,
-        difficulty=args.difficulty,
-        passage_type=args.passage_type,
-        output_format=args.output_format,
-    )
-    
-    if args.output_format == "json":
-        print(json.dumps(result, ensure_ascii=False, indent=2))
-    else:
-        print(result)
-
-
-if __name__ == "__main__":
-    main()

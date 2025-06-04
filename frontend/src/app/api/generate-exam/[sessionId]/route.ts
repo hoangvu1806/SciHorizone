@@ -10,8 +10,7 @@ export async function POST(request: NextRequest) {
     const jsonData = await request.json();
 
     // Forward the request to the backend API
-    // Sử dụng domain apisci.hoangvu.id.vn đã được ánh xạ đến FastAPI server
-    const backendUrl = `https://apisci.hoangvu.id.vn${API_ENDPOINTS.GENERATE_EXAM(sessionId)}`;
+    const backendUrl = `${API_BASE_URL}${API_ENDPOINTS.GENERATE_EXAM(sessionId)}`;
     
     const response = await fetch(backendUrl, {
       method: 'POST',

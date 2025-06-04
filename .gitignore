@@ -6,6 +6,10 @@
 **/*.py[cod]
 **/*$py.class
 
+**/server/output/*
+**/server/data/*
+**/server/uploads/*
+
 # C extensions
 **/*.so
 

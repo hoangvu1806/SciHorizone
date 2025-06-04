@@ -157,7 +157,7 @@
         "improvement_suggestions": {
             "type": "array",
             "items": { "type": "string" },
-            "description": "Đề xuất cải thiện"
+            "description": "Improvement suggestions"
         }
     },
     "required": [

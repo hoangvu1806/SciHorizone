@@ -1,8 +1,7 @@
-// Cấu hình API cho ứng dụng
-// Sử dụng đường dẫn tương đối để Next.js có thể xử lý proxy
-export const API_BASE_URL = '/api';
+// API configuration for the application
+export const API_BASE_URL = 'http://localhost:8088';
 
-// Danh sách endpoint
+// List of endpoints
 export const API_ENDPOINTS = {
   UPLOAD_PDF: '/upload-pdf',
   GENERATE_EXAM: (sessionId: string) => `/generate-exam/${sessionId}`,
