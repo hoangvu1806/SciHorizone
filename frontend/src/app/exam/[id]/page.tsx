@@ -1900,12 +1900,12 @@ export default function ExamPage() {
 
             // Hàm thêm văn bản với tự động xuống dòng
             const addWrappedText = (
-                text,
-                x,
-                y,
-                maxWidth,
-                lineHeight,
-                options = {}
+                text: string,
+                x: number,
+                y: number,
+                maxWidth: number,
+                lineHeight: number,
+                options: any = {}
             ) => {
                 if (!text) return y;
 
@@ -1919,7 +1919,7 @@ export default function ExamPage() {
 
                 const textLines = pdf.splitTextToSize(text, maxWidth);
 
-                textLines.forEach((line) => {
+                textLines.forEach((line: string) => {
                     if (y > pdf.internal.pageSize.getHeight() - margin) {
                         pdf.addPage();
                         y = margin;
@@ -2386,9 +2386,6 @@ export default function ExamPage() {
     }
 
     const currentPassage = exam.passages.find((p) => p.id === selectedPassage);
-    const passageQuestions = exam.questions.filter(
-        (q) => q.passageId === selectedPassage
-    );
     const currentPassageAnalysis = exam.passageAnalysis.find(
         (p) => p.passageNumber === currentPassage?.passageNumber
     );
@@ -3181,10 +3178,6 @@ export default function ExamPage() {
                                                     children,
                                                     ...props
                                                 }) => {
-                                                    const match =
-                                                        /language-(\w+)/.exec(
-                                                            className || ""
-                                                        );
                                                     return !className ? (
                                                         <code
                                                             className="bg-secondary-100 px-1 py-0.5 rounded text-secondary-800"
